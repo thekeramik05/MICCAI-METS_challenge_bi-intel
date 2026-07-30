@@ -109,11 +109,38 @@ enforcing it would have cost far more than it gained.
 
 ## 💾 Model Weights
 
-The pre-trained checkpoints for this project are hosted on Hugging Face. You can download the model weights directly from the link below:
+The pre-trained checkpoints are hosted on Hugging Face:
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model_Weights-blue)](https://huggingface.co/keramik05/MICCAI-METS_challenge_bi-intel_model)
 
-Please download the `weights.zip` (or `.pth` files) and place them in the `models/` directory before running the inference script.
+Download `weights.zip` and unzip it at the repository root. The archive already
+contains the layout the build expects, so nothing has to be moved by hand:
+
+```
+weights/
+├── nnUNet_results/Dataset001_BraTS/
+│   ├── nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres/
+│   │   ├── fold_0/checkpoint_final.pth ... fold_4/checkpoint_final.pth   # Model A, 5 folds
+│   │   ├── dataset.json
+│   │   └── plans.json
+│   └── nnUNetTrainerBraTS_BrainIACWrapper_RCOversample__3__nnUNetPlans__3d_fullres/
+│       ├── fold_1/checkpoint_final.pth, fold_3/checkpoint_final.pth      # Model B, 2 folds
+│       ├── dataset.json
+│       └── plans.json
+└── foundation_encoders/
+    ├── Triad-PlainConvUNet-MAE.pth
+    └── BrainIAC.ckpt
+```
+
+```bash
+unzip weights.zip          # run from the repository root
+docker build -t brats-mets-task1:latest .
+```
+
+Seven fold checkpoints in total (five for Model A, two for Model B), matching
+`MODEL_A_FOLDS` and `MODEL_B_FOLDS` in `src/config.py`. If you already have the
+checkpoints on a local training machine, `scripts/prepare_weights.sh` stages them
+into the same layout instead — see §6.
 
 ---
 

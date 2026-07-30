@@ -8,3 +8,10 @@ __pycache__/
 README.md
 docs/
 scripts/analysis/
+
+# Local test fixtures and any stray image data. These are never COPYed into the
+# image; excluding them keeps several GB of challenge data out of the build
+# context, which the daemon would otherwise transfer on every build.
+sample_input/
+*.nii
+*.nii.gz

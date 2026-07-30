@@ -5,6 +5,7 @@
 SNFH를 1복셀 dilation한 마스크와 겹치지 않는(=인접하지 않는) 컴포넌트를
 "계층 위반"으로 분류하고, TP/FP 비율과 confidence를 계층 위반/정상으로 나눠 비교.
 """
+import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -12,7 +13,9 @@ import nibabel as nib
 import numpy as np
 from scipy import ndimage
 
-BASE = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/nnUNet")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+BASE = PROJECT_ROOT / "nnUNet"
 GT_DIR = BASE / "nnUNet_raw/Dataset001_BraTS/labelsTr"
 D1_FT = BASE / "nnUNet_results/Dataset001_BraTS/nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres"
 BRAINIAC = BASE / "nnUNet_results/Dataset001_BraTS/nnUNetTrainerBraTS_BrainIACWrapper_RCOversample__3__nnUNetPlans__3d_fullres"

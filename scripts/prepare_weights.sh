@@ -10,9 +10,13 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Where the trained models currently live on the training machine.
-SRC_RESULTS="${SRC_RESULTS:-/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/nnUNet/nnUNet_results}"
-SRC_ENCODERS="${SRC_ENCODERS:-/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/outputs/postprocess/foundation_encoder_checkpoints}"
+# Where the trained models live on the training machine. Override both to match
+# your layout, e.g.
+#   SRC_RESULTS=/data/nnUNet_results SRC_ENCODERS=/data/encoders ./scripts/prepare_weights.sh
+# If you are not the one who trained the models, skip this script entirely and
+# unzip the published weights.zip at the repository root instead (see README).
+SRC_RESULTS="${SRC_RESULTS:-$MICCAI_PROJECT_ROOT/nnUNet/nnUNet_results}"
+SRC_ENCODERS="${SRC_ENCODERS:-$MICCAI_PROJECT_ROOT/foundation_encoder_checkpoints}"
 
 DATASET="Dataset001_BraTS"
 MODEL_A="nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres"

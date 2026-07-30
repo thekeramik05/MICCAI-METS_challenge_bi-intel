@@ -1,16 +1,16 @@
 """
-Usage example:
+Usage example (PROJECT_ROOT is wherever this repository is checked out):
 
-export nnUNet_results=/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/nnUNet/nnUNet_results
+export nnUNet_results=$PROJECT_ROOT/nnUNet/nnUNet_results
 
-export BRAINIAC_CKPT=/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/foundation_encoder/BrainIAC/src/checkpoints/BrainIAC.ckpt
+export BRAINIAC_CKPT=$PROJECT_ROOT/weights/foundation_encoders/BrainIAC.ckpt
 export BRAINIAC_MODALITY_INDICES=0,1,2,3
 export BRAINIAC_FEATURE_CHANNELS=4
 export BRAINIAC_FREEZE=1
 
 nnUNetv2_predict \
-  -i /home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/dataset/total_val \
-  -o /home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/outputs/BraTS_validation/BrainIACWrapper/fold0 \
+  -i $PROJECT_ROOT/dataset/total_val \
+  -o $PROJECT_ROOT/outputs/BraTS_validation/BrainIACWrapper/fold0 \
   -d Dataset001_BraTS \
   -c 3d_fullres \
   -tr nnUNetTrainerBraTS_BrainIACWrapper_RCOversample \
@@ -33,10 +33,9 @@ from nnunetv2.training.nnUNetTrainer.variants.nnUNetTrainerBraTS_RCOversample im
 )
 
 
-BRAINIAC_CKPT_DEFAULT = Path(
-    "/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/"
-    "foundation_encoder/BrainIAC/src/checkpoints/BrainIAC.ckpt"
-)
+# Fallback only. Set BRAINIAC_CKPT to the encoder checkpoint; the Docker image
+# does exactly that (see Dockerfile).
+BRAINIAC_CKPT_DEFAULT = Path("weights/foundation_encoders/BrainIAC.ckpt")
 
 BRAINIAC_TARGET_SHAPE = (96, 96, 96)
 BRAINIAC_PATCH_GRID = (6, 6, 6)

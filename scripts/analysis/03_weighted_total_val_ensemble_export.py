@@ -4,12 +4,15 @@
 좌표계 버그 수정판과 동일한 방식 사용: export_prediction_from_logits를 쓰지 않고
 단순 argmax + transpose(2,1,0) + 원본 이미지 affine 재사용 (검증 완료된 방법).
 """
+import os
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
 
-OUT_ROOT = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/outputs")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+OUT_ROOT = PROJECT_ROOT / "outputs"
 D1_DIR = OUT_ROOT / "total_val_D1_5fold_probs"
 BRAINIAC_DIR = OUT_ROOT / "total_val_brainiac_f13_probs"
 OUT_DIR = OUT_ROOT / "total_val_D1_brainiac_ensemble_weighted"

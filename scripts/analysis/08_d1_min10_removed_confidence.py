@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """D1(Triad FT900) 단독: min_size=10 적용 시 사라지는(size<10) 컴포넌트의 클래스별 confidence 평균."""
+import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -7,7 +8,9 @@ import nibabel as nib
 import numpy as np
 from scipy import ndimage
 
-BASE = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/nnUNet")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+BASE = PROJECT_ROOT / "nnUNet"
 GT_DIR = BASE / "nnUNet_raw/Dataset001_BraTS/labelsTr"
 D1_FT = BASE / "nnUNet_results/Dataset001_BraTS/nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres"
 

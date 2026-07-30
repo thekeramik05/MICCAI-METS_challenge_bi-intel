@@ -2,13 +2,16 @@
 """D1+BrainIAC total_val 앙상블: RC만 가중치(D1=0.15/BrainIAC=0.85) 조정, 나머지는 5:5.
 그 위에 크기<50 + 클래스별 confidence threshold 후처리(PP)까지 적용.
 """
+import os
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
 from scipy import ndimage
 
-OUT_ROOT = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/outputs")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+OUT_ROOT = PROJECT_ROOT / "outputs"
 D1_DIR = OUT_ROOT / "total_val_D1_5fold_probs"
 BRAINIAC_DIR = OUT_ROOT / "total_val_brainiac_f13_probs"
 RAW_OUT_DIR = OUT_ROOT / "total_val_D1_brainiac_ensemble_rcweighted"

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """BraTS-MET-00703-001 (fold_3, PP 적용 후 meanDice=0.9711) GT vs Pred(PP) 시각화."""
+import os
 from pathlib import Path
 
 import matplotlib
@@ -10,7 +11,9 @@ import nibabel as nib
 import numpy as np
 from scipy import ndimage
 
-BASE = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/nnUNet")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+BASE = PROJECT_ROOT / "nnUNet"
 GT_DIR = BASE / "nnUNet_raw/Dataset001_BraTS/labelsTr"
 IMG_DIR = BASE / "nnUNet_raw/Dataset001_BraTS/imagesTr"
 D1_FT = BASE / "nnUNet_results/Dataset001_BraTS/nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres"

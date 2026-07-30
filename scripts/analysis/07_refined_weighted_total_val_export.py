@@ -9,12 +9,15 @@
 - ET: Ensemble이 이미 최고(0.678) -> 50/50 유지
 - 좌표계 버그 없는 검증된 방식(argmax+transpose) 사용.
 """
+import os
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
 
-OUT_ROOT = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/outputs")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+OUT_ROOT = PROJECT_ROOT / "outputs"
 D1_DIR = OUT_ROOT / "total_val_D1_5fold_probs"
 BRAINIAC_DIR = OUT_ROOT / "total_val_brainiac_f13_probs"
 OUT_DIR = OUT_ROOT / "total_val_D1_brainiac_ensemble_refined"

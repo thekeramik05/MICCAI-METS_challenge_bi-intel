@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """후처리된 simple ensemble(total_val)이 다른 추론 결과들과 얼마나 유사한지 (foreground Dice/IoU)."""
+import os
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
 
-OUT_ROOT = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/outputs")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+OUT_ROOT = PROJECT_ROOT / "outputs"
 PP_DIR = OUT_ROOT / "total_val_D1_brainiac_ensemble_simple_pp"
 
 TARGETS = {

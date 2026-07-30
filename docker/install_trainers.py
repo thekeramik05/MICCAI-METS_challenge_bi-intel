@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -50,18 +51,30 @@ def main() -> int:
     (site_packages / "nnunet_brats_variants.pth").write_text(f"{variants}\n")
     print(f"registered {variants} on sys.path via .pth")
 
-    # Verify discovery in a fresh interpreter-visible state.
-    from nnunetv2.utilities.find_class_by_name import recursive_find_python_class
-
-    search_root = os.path.join(str(package_root), "training", "nnUNetTrainer")
-    for name in REQUIRED_TRAINERS:
-        cls = recursive_find_python_class(
-            search_root, name, "nnunetv2.training.nnUNetTrainer"
-        )
-        if cls is None:
-            print(f"FATAL: trainer not discoverable: {name}", file=sys.stderr)
-            return 1
-        print(f"  OK {name}")
+    # The .pth is only processed at interpreter start-up, so it is NOT active in
+    # this process. Several trainers import their helpers by bare module name
+    # ("from rc_sampling import ...") and would raise ModuleNotFoundError if we
+    # tried to resolve them here. Verify in a fresh interpreter instead, which
+    # is also the state the container actually runs in.
+    check = (
+        "import os, sys\n"
+        "from nnunetv2.utilities.find_class_by_name import recursive_find_python_class\n"
+        "import nnunetv2\n"
+        "root = os.path.join(os.path.dirname(nnunetv2.__file__), 'training', 'nnUNetTrainer')\n"
+        "missing = [n for n in sys.argv[1:]\n"
+        "           if recursive_find_python_class(root, n, 'nnunetv2.training.nnUNetTrainer') is None]\n"
+        "print('\\n'.join('  OK ' + n for n in sys.argv[1:] if n not in missing))\n"
+        "sys.exit('FATAL: trainer not discoverable: ' + ', '.join(missing) if missing else 0)\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", check, *REQUIRED_TRAINERS],
+        capture_output=True,
+        text=True,
+    )
+    sys.stdout.write(result.stdout)
+    if result.returncode != 0:
+        sys.stderr.write(result.stderr)
+        return 1
 
     return 0
 

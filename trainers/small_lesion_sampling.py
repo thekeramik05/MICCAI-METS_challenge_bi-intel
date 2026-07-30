@@ -7,7 +7,7 @@ import pandas as pd
 DEFAULT_CASE_INDEX_CSV = Path(
     os.environ.get(
         "MICCAI_CASE_INDEX_CSV",
-        "/home1/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/dataset/train/training_files_index.csv",
+        "dataset/train/training_files_index.csv",
     )
 )
 

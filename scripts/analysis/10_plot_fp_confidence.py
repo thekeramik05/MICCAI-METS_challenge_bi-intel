@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """후처리 임계값 근거 시각화: 클래스별 FP confidence 히스토그램(전체) +
 클래스x크기bin FP confidence 분포. Simple(50/50) 앙상블, fold_1+3 검증셋 기준."""
+import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -11,7 +12,9 @@ import nibabel as nib
 import numpy as np
 from scipy import ndimage
 
-BASE = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/nnUNet")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+BASE = PROJECT_ROOT / "nnUNet"
 GT_DIR = BASE / "nnUNet_raw/Dataset001_BraTS/labelsTr"
 D1_FT = BASE / "nnUNet_results/Dataset001_BraTS/nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres"
 BRAINIAC = BASE / "nnUNet_results/Dataset001_BraTS/nnUNetTrainerBraTS_BrainIACWrapper_RCOversample__3__nnUNetPlans__3d_fullres"

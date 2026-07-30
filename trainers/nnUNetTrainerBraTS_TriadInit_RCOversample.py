@@ -8,10 +8,9 @@ import torch.nn as nn
 from nnUNetTrainerBraTS_RCOversample import nnUNetTrainerBraTS_RCOversample
 
 
-TRIAD_CKPT_DEFAULT = Path(
-    "/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/"
-    "foundation_encoder/Triad/Triad-PlainConvUNet-MAE.pth"
-)
+# Fallback only. Set TRIAD_CKPT to the encoder checkpoint; the Docker image
+# does exactly that (see Dockerfile).
+TRIAD_CKPT_DEFAULT = Path("weights/foundation_encoders/Triad-PlainConvUNet-MAE.pth")
 
 
 def _unwrap_checkpoint(ckpt: Any) -> Dict[str, torch.Tensor]:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Simple(50/50) vs 클래스별 가중치 앙상블(그리드서치 결과), fold_1+3.
 joint argmax 기준 실제 Dice + 크기bin별 TP/FN + FP confidence를 한 번에 계산."""
+import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -8,7 +9,9 @@ import nibabel as nib
 import numpy as np
 from scipy import ndimage
 
-BASE = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/nnUNet")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+BASE = PROJECT_ROOT / "nnUNet"
 GT_DIR = BASE / "nnUNet_raw/Dataset001_BraTS/labelsTr"
 D1_FT = BASE / "nnUNet_results/Dataset001_BraTS/nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres"
 BRAINIAC = BASE / "nnUNet_results/Dataset001_BraTS/nnUNetTrainerBraTS_BrainIACWrapper_RCOversample__3__nnUNetPlans__3d_fullres"

@@ -42,9 +42,16 @@ RUN python -m pip install --no-cache-dir -r /tmp/requirements.txt && \
 
 # --- Custom nnU-Net trainers -----------------------------------------------
 # Installed into the physical variants/ directory of the installed nnunetv2
-# package; see docker/install_trainers.py for why PYTHONPATH is not sufficient.
-# The script also asserts that both required trainers resolve, so a broken
-# trainer set fails the build instead of the submission.
+# package: nnU-Net resolves trainers by walking that directory, so putting the
+# files on PYTHONPATH alone does not make them discoverable. A .pth file also
+# registers variants/ on sys.path so that the trainers' bare imports
+# ("from rc_sampling import ...") resolve at run time.
+#
+# The script then asserts that both required trainers resolve. That check runs
+# in a *separate* interpreter, because the .pth it has just written is only
+# processed at interpreter start-up — verifying in-process fails on exactly
+# those bare imports. A broken trainer set therefore fails the build rather
+# than the submission.
 COPY trainers/ /opt/trainers/
 COPY docker/install_trainers.py /opt/install_trainers.py
 RUN python /opt/install_trainers.py && rm -rf /opt/trainers /opt/install_trainers.py

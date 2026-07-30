@@ -5,13 +5,16 @@
 클래스별 confidence 임계값(CONF_THRESH) 미달 시 제거. 50복셀 이상은 그대로 둠
 (fold_1+3 검증에서 confidence가 더 이상 안 갈리는 구간으로 확인됨).
 """
+import os
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
 from scipy import ndimage
 
-OUT_ROOT = Path("/home/irteam/data-vol1/2026_MICCAI_challenge/MICCAI_task_1/outputs")
+PROJECT_ROOT = Path(os.environ.get("MICCAI_PROJECT_ROOT", "."))
+
+OUT_ROOT = PROJECT_ROOT / "outputs"
 D1_DIR = OUT_ROOT / "total_val_D1_5fold_probs"
 BRAINIAC_DIR = OUT_ROOT / "total_val_brainiac_f13_probs"
 RAW_OUT_DIR = OUT_ROOT / "total_val_D1_brainiac_ensemble_fixed"  # 후처리 전 simple ensemble (이미 존재)
