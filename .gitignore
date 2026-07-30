@@ -1,0 +1,35 @@
+# --- model weights (distributed via external link, never committed) --------
+weights/
+*.pth
+*.ckpt
+*.npz
+*.pkl
+
+# --- nnU-Net working directories -------------------------------------------
+nnUNet_raw/
+nnUNet_preprocessed/
+nnUNet_results/
+
+# --- data -------------------------------------------------------------------
+*.nii
+*.nii.gz
+dataset/
+Validation/
+results/
+outputs/
+
+# --- python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# --- logs / scratch ---------------------------------------------------------
+*.log
+.DS_Store
+
+# --- local-only test docs (not part of the challenge submission) -----------
+LOCAL_TIMING_TEST_4090.md
+DOCKER_HANDOVER.md

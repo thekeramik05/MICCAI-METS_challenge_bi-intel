@@ -1,0 +1,10 @@
+# keep the build context small; weights/ is deliberately NOT ignored because
+# the image has to carry the checkpoints (no network access at runtime).
+.git/
+.gitignore
+__pycache__/
+*.py[cod]
+*.log
+README.md
+docs/
+scripts/analysis/

@@ -1,0 +1,29 @@
+# Conda environment used for training and local inference (no sudo required).
+#
+#   conda env create -f environment.yaml
+#   conda activate brats-mets
+#
+# The Docker image does NOT use this file — it builds on the official
+# pytorch/pytorch CUDA image and installs requirements.txt instead.
+name: brats-mets
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      # Install the CUDA 12.4 torch build explicitly; the default PyPI wheel
+      # may not match the driver on the training machine.
+      #   --extra-index-url https://download.pytorch.org/whl/cu124
+      - torch==2.6.0
+      - nnunetv2==2.7.0
+      - monai==1.5.2
+      - SimpleITK==2.5.5
+      - nibabel==5.4.0
+      - scipy==1.15.2
+      - numpy==2.2.6
+      - pandas==2.3.3
+      - threadpoolctl==3.6.0
+      - einops==0.8.2
+      - timm==1.0.22
+      - matplotlib==3.10.9

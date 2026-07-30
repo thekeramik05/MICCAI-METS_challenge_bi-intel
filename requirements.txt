@@ -1,0 +1,15 @@
+# Pinned to the exact versions the models were trained and validated with.
+# torch is already present in the base image (2.6.0 + cu124); it is listed so
+# pip treats the requirement as satisfied instead of pulling a different build.
+torch==2.6.0
+
+nnunetv2==2.7.0
+monai==1.5.2
+SimpleITK==2.5.5
+nibabel==5.4.0
+scipy==1.15.2
+numpy==2.2.6
+einops==0.8.2
+timm==1.0.22
+pandas==2.3.3
+threadpoolctl==3.6.0
