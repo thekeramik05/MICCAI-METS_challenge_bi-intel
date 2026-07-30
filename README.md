@@ -107,7 +107,13 @@ enforcing it would have cost far more than it gained.
 └── LICENSE
 ```
 
-Model weights are **not** in this repository (see §6).
+## 💾 Model Weights
+
+The pre-trained checkpoints for this project are hosted on Hugging Face. You can download the model weights directly from the link below:
+
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model_Weights-blue)](https://huggingface.co/keramik05/MICCAI-METS_challenge_bi-intel_model)
+
+Please download the `weights.zip` (or `.pth` files) and place them in the `models/` directory before running the inference script.
 
 ---
 
