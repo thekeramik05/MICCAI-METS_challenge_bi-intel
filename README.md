@@ -5,8 +5,9 @@ encoder, one given auxiliary input channels — followed by size-gated, class-wi
 confidence post-processing.
 
 Code in this repository is licensed under the [Apache License 2.0](LICENSE).
-The model weights are distributed separately under CC BY-NC 4.0 and carry a
-non-commercial restriction inherited from one of the pretrained components; see
+The model weights are distributed separately and are **not** covered by that
+licence: Model B is governed by the BrainIAC Research-Only License and is
+restricted to non-commercial academic research and educational use. See
 [§7 Third-party components](#7-third-party-components-and-licensing).
 
 ---
@@ -405,16 +406,26 @@ checkpoints carry their own terms.
 | Component | Licence | Source |
 |---|---|---|
 | nnU-Net v2 | Apache-2.0 | https://github.com/MIC-DKFZ/nnUNet |
-| Triad (PlainConvUNet-MAE) | CC BY 4.0 | https://github.com/wangshansong1/Triad |
+| Triad (PlainConvUNet-MAE) | MIT | https://github.com/wangshansong1/Triad |
 | BrainIAC (ViT-B/16) | Non-commercial academic research only | https://github.com/AIM-KannLab/BrainIAC |
 
-Triad is used under CC BY 4.0: the pretrained encoder initialised Model A and
-was then modified by fine-tuning on BraTS-METS data.
+Triad is MIT-licensed and imposes no restriction on the derived Model A weights,
+which were produced by initialising the encoder from `Triad-PlainConvUNet-MAE.pth`
+and then fully fine-tuning it on BraTS-METS data. Triad itself builds on
+[VoCo v2](https://github.com/Luffy03/Large-Scale-Medical).
 
-Model B embeds the BrainIAC backbone (§3.2) and therefore inherits its
-non-commercial restriction. Commercial use of Model B, or of any weights derived
-from it, requires a separate licence from Mass General Brigham. The published
-weights are released under CC BY-NC 4.0 for this reason.
+Model B embeds the BrainIAC backbone (§3.2) and is therefore governed by the
+**BrainIAC Research-Only License** rather than by a standard open licence. That
+licence permits use, copying, modification and redistribution *solely for
+non-commercial academic research and educational purposes*, which is the basis
+on which the Model B checkpoints are published here. Commercial use — including
+use in clinical workflows, decision-support systems, healthcare operations, or
+any fee-bearing product or service — is prohibited without a separate written
+licence from Mass General Brigham, and all commercial rights are reserved by
+them. A copy of the licence ships with the weights archive.
+
+Model A is unaffected: Triad is MIT-licensed, so those checkpoints carry no
+comparable restriction.
 
 ---
 
@@ -446,9 +457,46 @@ infrastructure:
 }
 ```
 
-Please also cite the method components this work builds on: nnU-Net
-(Isensee et al., *Nature Methods* 2021), Triad (Wang et al., *Medical Image
-Analysis* 2026) and BrainIAC (Tak et al., *Nature Neuroscience* 2026).
+Please also cite the method components this work builds on:
+
+```bibtex
+@article{isensee2021nnunet,
+  title     = {nnU-Net: a self-configuring method for deep learning-based
+               biomedical image segmentation},
+  author    = {Isensee, Fabian and Jaeger, Paul F. and Kohl, Simon A. A. and
+               Petersen, Jens and Maier-Hein, Klaus H.},
+  journal   = {Nature Methods},
+  volume    = {18},
+  pages     = {203--211},
+  year      = {2021},
+  doi       = {10.1038/s41592-020-01008-z}
+}
+
+@article{wang2026triad,
+  title   = {Vision foundation model for 3D magnetic resonance imaging
+             segmentation, classification, and registration},
+  author  = {Wang, Shansong and Safari, Mojtaba and Li, Qiang and
+             Chang, Chih-Wei and Qiu, Richard LJ and Roper, Justin and
+             Yu, David S. and Yang, Xiaofeng},
+  journal = {Medical Image Analysis},
+  volume  = {110},
+  pages   = {103992},
+  year    = {2026},
+  issn    = {1361-8415},
+  doi     = {10.1016/j.media.2026.103992},
+  url     = {https://www.sciencedirect.com/science/article/pii/S1361841526000617}
+}
+
+@article{tak2026generalizable,
+  title     = {A generalizable foundation model for analysis of human brain MRI},
+  author    = {Tak, Divyanshu and Gormosa, B. A. and Zapaishchykova, A. and others},
+  journal   = {Nature Neuroscience},
+  year      = {2026},
+  publisher = {Springer Nature},
+  doi       = {10.1038/s41593-026-02202-6},
+  url       = {https://doi.org/10.1038/s41593-026-02202-6}
+}
+```
 
 ---
 
