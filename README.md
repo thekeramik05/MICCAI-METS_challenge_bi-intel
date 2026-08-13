@@ -1,9 +1,13 @@
 # BraTS-METS 2026 — Task 1: Brain Metastases Segmentation
 
-Ensemble of two foundation-model-augmented nnU-Net v2 models, followed by
-size-gated, class-wise confidence post-processing.
+An ensemble of two nnU-Net v2 models — one initialised from a pretrained MRI
+encoder, one given auxiliary input channels — followed by size-gated, class-wise
+confidence post-processing.
 
-Licensed under the [Apache License 2.0](LICENSE).
+Code in this repository is licensed under the [Apache License 2.0](LICENSE).
+The model weights are distributed separately under CC BY-NC 4.0 and carry a
+non-commercial restriction inherited from one of the pretrained components; see
+[§7 Third-party components](#7-third-party-components-and-licensing).
 
 ---
 
@@ -12,7 +16,7 @@ Licensed under the [Apache License 2.0](LICENSE).
 | | Model A ("Triad") | Model B ("BrainIAC") |
 |---|---|---|
 | Backbone | nnU-Net v2 `3d_fullres` (PlainConvUNet) | nnU-Net v2 `3d_fullres` (PlainConvUNet) |
-| Foundation model | Triad PlainConvUNet-MAE checkpoint used to **initialise the encoder weights** | Frozen ViT-B/16 (BrainIAC) used as an **auxiliary feature extractor** |
+| Pretrained component | Triad PlainConvUNet-MAE checkpoint used to **initialise the encoder weights** | Frozen ViT-B/16 (BrainIAC) used as an **auxiliary feature extractor** |
 | Coupling | encoder weights loaded, then trained | ViT features projected to 4 channels and concatenated to the 4 MRI channels (8 input channels) |
 | Training | two-stage: LP100 (encoder frozen) → FT900 (full fine-tune) | single stage, RC oversampling |
 | Loss | Dice + voxel-weighted CE (small-lesion weighting, CE weight 3) | Dice + CE, RC oversampling |
@@ -20,15 +24,42 @@ Licensed under the [Apache License 2.0](LICENSE).
 
 The two coupling strategies are deliberately different: Triad replaces the
 encoder initialisation, whereas BrainIAC never touches the U-Net encoder — it
-only widens the input tensor. This keeps the two models decorrelated enough for
-ensembling to help.
+only widens the input tensor. The two models therefore start from different
+initialisations and see different inputs, which is what makes ensembling useful
+here. Section 1.1 states what this does and does not establish about the
+pretrained components themselves.
 
-Only folds 1 and 3 of model B are used. Two separate constraints set this: the
+Only folds 1 and 3 of Model B are used. Two separate constraints set this: the
 number of folds was capped at two by the inference time budget, and folds 1 and
-3 were the pair selected on internal cross-validation performance when
-ensembled with model A.
+3 were the pair selected on internal cross-validation performance when ensembled
+with Model A.
 
-### Ensembling
+### 1.1 What the pretrained components explain
+
+A control was run for Model B on fold 1 (n = 259 cases; RC reference components
+present in 41 of them). Holding the 8-channel input fixed and replacing the four
+BrainIAC-derived channels with **random features** of the same shape gives, for
+the resection cavity region:
+
+| Comparison | ΔDice (bootstrap 95% CI) |
+|---|---|
+| random-feature control − plain nnU-Net | **+0.0911 [+0.0205, +0.1684]** |
+| BrainIAC − random-feature control | −0.0137 [−0.0417, +0.0098] (n.s.) |
+| duplicated-input control − random-feature control | −0.0728 (worse) |
+
+Two conclusions follow. The auxiliary channels do help RC, and they have to
+carry independent variation: duplicating existing input channels performs worse
+than noise. But **we find no evidence that BrainIAC's pretrained representation
+outperforms random features of the same shape.** The effect we can demonstrate
+belongs to the auxiliary-channel design, not to the specific pretraining.
+
+Model A's Triad initialisation was not ablated, so no claim is made about its
+contribution in either direction.
+
+This control is a single fold and constrains interpretation rather than settling
+it; it is not a full ablation study.
+
+### 1.2 Ensembling
 
 The two softmax maps are averaged **per class**:
 
@@ -41,16 +72,16 @@ The two softmax maps are averaged **per class**:
 | **RC** | **0.15** | **0.85** |
 
 Everything stays at a plain 50/50 average except the resection cavity. On the
-official hidden validation set BrainIAC was clearly better on RC while the two
+official hidden validation set Model B was clearly better on RC while the two
 models were statistically indistinguishable on the other regions, so RC is the
-only channel where a deviation from 50/50 is justified by measured evidence.
+only channel where a deviation from 50/50 is supported by measured evidence.
 
 A per-class weight grid search was also carried out. Under the *true*
 joint-argmax decision rule its predicted gains almost completely disappeared
 (ΔDice ≈ +0.0006 / +0.0000 / −0.0001 / +0.0060 for NETC / SNFH / ET / RC), so
 those weights were **not** adopted.
 
-### Post-processing
+### 1.3 Post-processing
 
 Per class, 26-connected components are extracted from the argmax label map.
 A component is deleted only when **both** conditions hold:
@@ -73,7 +104,7 @@ of false-positive components stratified by component size. Two patterns drove
 the choice: confidence rises with component size, and RC sits about 0.1 lower
 than every other class across all size bins.
 
-This is deliberately *not* a plain `min_size` filter. Measured on model A alone,
+This is deliberately *not* a plain `min_size` filter. Measured on Model A alone,
 a naive "delete everything under 10 voxels" rule would have removed 99 NETC and
 237 ET true-positive components whose mean confidence (0.757 and 0.773) was
 higher than that of the false positives it was meant to remove.
@@ -90,8 +121,10 @@ enforcing it would have cost far more than it gained.
 
 ```
 .
-├── Dockerfile                 # challenge submission image (Apache-2.0 header)
-├── docker/entrypoint.sh       # container entrypoint
+├── Dockerfile                 # challenge submission image
+├── docker/
+│   ├── entrypoint.sh          # container entrypoint
+│   └── install_trainers.py    # copies trainers into the nnU-Net package
 ├── src/
 │   ├── config.py              # all paths, weights and thresholds
 │   ├── predict.py             # inference entrypoint (case discovery → output)
@@ -101,50 +134,94 @@ enforcing it would have cost far more than it gained.
 │   ├── prepare_weights.sh     # stage checkpoints into weights/ before build
 │   ├── train_model_a_triad.sh
 │   ├── train_model_b_brainiac.sh
-│   └── analysis/              # validation / threshold-fitting experiments
+│   └── analysis/              # validation and threshold-fitting experiments
+├── splits/
+│   └── splits_final.json      # the five-fold split used throughout
 ├── environment.yaml
 ├── requirements.txt
 └── LICENSE
 ```
 
-## 💾 Model Weights
+---
 
-The pre-trained checkpoints are hosted on Hugging Face:
+## 3. Model weights
+
+The fine-tuned checkpoints are hosted on Hugging Face:
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model_Weights-blue)](https://huggingface.co/keramik05/MICCAI-METS_challenge_bi-intel_model)
 
-Download `weights.zip` and unzip it at the repository root. The archive already
-contains the layout the build expects, so nothing has to be moved by hand:
-
-```
-weights/
-├── nnUNet_results/Dataset001_BraTS/
-│   ├── nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres/
-│   │   ├── fold_0/checkpoint_final.pth ... fold_4/checkpoint_final.pth   # Model A, 5 folds
-│   │   ├── dataset.json
-│   │   └── plans.json
-│   └── nnUNetTrainerBraTS_BrainIACWrapper_RCOversample__3__nnUNetPlans__3d_fullres/
-│       ├── fold_1/checkpoint_final.pth, fold_3/checkpoint_final.pth      # Model B, 2 folds
-│       ├── dataset.json
-│       └── plans.json
-└── foundation_encoders/
-    ├── Triad-PlainConvUNet-MAE.pth
-    └── BrainIAC.ckpt
-```
+Download `weights.zip` and unzip it at the repository root:
 
 ```bash
 unzip weights.zip          # run from the repository root
-docker build -t brats-mets-task1:latest .
+```
+
+```
+weights/
+└── nnUNet_results/Dataset001_BraTS/
+    ├── nnUNetTrainerBraTS_TriadInit_SmallLesionWeightedCE_CEw3__3_FT900__nnUNetPlans__3d_fullres/
+    │   ├── fold_0/checkpoint_final.pth ... fold_4/checkpoint_final.pth   # Model A, 5 folds
+    │   ├── dataset.json
+    │   └── plans.json
+    └── nnUNetTrainerBraTS_BrainIACWrapper_RCOversample__3__nnUNetPlans__3d_fullres/
+        ├── fold_1/checkpoint_final.pth, fold_3/checkpoint_final.pth      # Model B, 2 folds
+        ├── dataset.json
+        └── plans.json
 ```
 
 Seven fold checkpoints in total (five for Model A, two for Model B), matching
-`MODEL_A_FOLDS` and `MODEL_B_FOLDS` in `src/config.py`. If you already have the
-checkpoints on a local training machine, `scripts/prepare_weights.sh` stages them
-into the same layout instead — see §6.
+`MODEL_A_FOLDS` and `MODEL_B_FOLDS` in `src/config.py`. Verify with:
+
+```bash
+find weights -name checkpoint_final.pth | wc -l     # expect 7
+```
+
+If you already hold the checkpoints on a training machine,
+`scripts/prepare_weights.sh` stages them into the same layout instead.
+
+### 3.1 Pretrained encoders — obtained separately
+
+The Triad and BrainIAC checkpoints are **not redistributed here**. Download them
+from their authors and point the environment variables at them:
+
+| Variable | Checkpoint | Source |
+|---|---|---|
+| `TRIAD_CKPT` | `Triad-PlainConvUNet-MAE.pth` | https://github.com/wangshansong1/Triad |
+| `BRAINIAC_CKPT` | `BrainIAC.ckpt` | https://github.com/AIM-KannLab/BrainIAC |
+
+`TRIAD_CKPT` is required for training Model A only. `BRAINIAC_CKPT` is required
+for both training and inference of Model B, because the wrapper reconstructs the
+ViT before loading the fold checkpoint.
+
+### 3.2 What the Model B checkpoints contain
+
+Model B checkpoints are not standalone nnU-Net weights. Each contains a
+complete, frozen copy of the BrainIAC ViT-B/16 backbone:
+
+| Module prefix | Parameters | Origin |
+|---|---|---|
+| `base_network.*` | 88.2 M | nnU-Net, trained here |
+| `brainiac.*` | **116.7 M** | **BrainIAC ViT-B/16, verbatim** |
+| `proj.*` | 3 K | projection layer, trained here |
+| total | 204.9 M | |
+
+Downloading Model B therefore means obtaining BrainIAC weights, and use is
+restricted to non-commercial academic research accordingly. Model A contains no
+third-party weights: the Triad checkpoint was used only to initialise the
+encoder, which was then fully fine-tuned, leaving a plain 88.2 M-parameter
+nnU-Net `encoder`/`decoder` structure.
+
+To inspect a checkpoint yourself:
+
+```python
+import collections, torch
+w = torch.load("fold_1/checkpoint_final.pth", map_location="cpu")["network_weights"]
+print(collections.Counter(k.split(".")[0] for k in w))
+```
 
 ---
 
-## 3. Environment setup (conda, no sudo)
+## 4. Environment setup (conda, no sudo)
 
 ```bash
 conda env create -f environment.yaml
@@ -154,10 +231,10 @@ conda activate brats-mets
 pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
 ```
 
-The custom trainers must be visible to nnU-Net. nnU-Net resolves trainer
-classes with `recursive_find_python_class`, which walks the **physical**
-`variants/` directory inside the installed package — setting `PYTHONPATH` alone
-is not sufficient:
+The custom trainers must be visible to nnU-Net. nnU-Net resolves trainer classes
+with `recursive_find_python_class`, which walks the **physical** `variants/`
+directory inside the installed package — setting `PYTHONPATH` alone is not
+sufficient:
 
 ```bash
 VARIANTS=$(python -c "import nnunetv2,os;print(os.path.join(os.path.dirname(nnunetv2.__file__),'training','nnUNetTrainer','variants'))")
@@ -175,10 +252,11 @@ export nnUNet_results=/path/to/nnUNet_results
 
 ---
 
-## 4. Training
+## 5. Training
 
 Dataset `Dataset001_BraTS`, `3d_fullres`, patch size `[112, 160, 128]`,
-batch size 2, SGD (momentum 0.99, Nesterov), initial LR 0.01.
+batch size 2, SGD (momentum 0.99, Nesterov), initial LR 0.01. The five-fold
+split is fixed in `splits/splits_final.json`.
 
 ```bash
 export TRIAD_CKPT=/path/to/Triad-PlainConvUNet-MAE.pth
@@ -193,9 +271,9 @@ for f in 1 3; do bash scripts/train_model_b_brainiac.sh $f; done
 
 ---
 
-## 5. Inference
+## 6. Inference
 
-### Local
+### 6.1 Local
 
 ```bash
 export nnUNet_results=/path/to/nnUNet_results
@@ -222,23 +300,14 @@ Output is flat, one file per case, named after the case folder
 (`BraTS-MET-12345-100.nii.gz`), which satisfies the required
 `<5-digit id>-<3-digit timepoint>.nii.gz` ending.
 
-### Docker
+### 6.2 Docker
 
 ```bash
-# Only needed if weights/ is empty. The script reads from the training machine's
-# nnUNet_results, so skip it when the checkpoints are already staged — check with
-#   find weights -name checkpoint_final.pth | wc -l     # expect 7
-bash scripts/prepare_weights.sh
-
+bash scripts/prepare_weights.sh      # only if weights/ is empty
 docker build -t brats-mets-task1:latest .
 ```
 
-For build, local verification and Synapse submission on a machine that already has
-the staged `weights/`, follow `DOCKER_HANDOVER.md` instead — it covers the checks
-this section leaves out (trainer-discovery assertion, output geometry validation,
-both documented memory limits).
-
-Official run command:
+Run with the official command:
 
 ```bash
 docker run \
@@ -248,52 +317,52 @@ docker run \
   --volume $PWD/Validation/:/input:ro \
   --volume $PWD/results/:/output:rw \
   --memory=48G --shm-size=16G \
-  docker.synapse.org/PROJECT_ID/IMAGE_NAME:TAG
+  brats-mets-task1:latest
 ```
 
-### Runtime notes (A10G, 24 GiB, 12 h budget)
+`--network none` is worth keeping in any local test: a container that reaches
+the network during inference will work on a developer machine and fail on an
+isolated grader.
 
-The models were trained on an H200 (143 GiB) but inference is memory-light:
-nnU-Net keeps every fold's weights in CPU RAM and swaps them into a *single*
-GPU network one at a time, so VRAM is driven by the sliding-window buffers for
-a `112×160×128` patch, not by the number of folds. Peak usage measured well
-under 24 GiB; the extra ViT-B/16 in model B adds roughly 0.4 GiB.
+### 6.3 Runtime
 
-Wall-clock is the tighter constraint. This entrypoint runs 7 network passes per
-case (5 folds of model A + 2 of model B). Measured per case, TTA off:
+The models were trained on an H200 (143 GiB), but inference is memory-light:
+nnU-Net keeps every fold's weights in CPU RAM and swaps them into a *single* GPU
+network one at a time, so VRAM is driven by the sliding-window buffers for a
+`112×160×128` patch, not by the number of folds. Peak usage measured well under
+24 GiB; the extra ViT-B/16 in Model B adds roughly 0.4 GiB.
+
+Wall-clock is the tighter constraint. The entrypoint runs seven network passes
+per case (five folds of Model A, two of Model B). Measured per case, TTA off:
 
 | GPU | per case | source |
 |---|---|---|
 | H200 (143 GiB) | ≈19.6 s | measured |
-| **RTX 4090 (24 GiB)** | **16.19 s** (σ 1.04, n=7 after warm-up) | **measured** |
+| **RTX 4090 (24 GiB)** | **16.19 s** (σ 1.04, n = 7 after warm-up) | **measured** |
 | A10G (24 GiB) | 23–35 s | extrapolated |
 
-Most of the per-case time is CPU-bound preprocessing (resampling,
-normalisation) and export back to the native grid; only a small fraction is GPU
-network time, which is why the 4090 — despite far more compute than an A10G —
-lands close to the H200. The A10G range above scales the GPU component by its
-FP16 throughput ratio and allows for a host CPU up to 2× slower than the
-measured machine.
+Most of the per-case time is CPU-bound preprocessing (resampling, normalisation)
+and export back to the native grid; only a small fraction is GPU network time,
+which is why the 4090 — despite far more compute than an A10G — lands close to
+the H200. The A10G range scales the GPU component by its FP16 throughput ratio
+and allows for a host CPU up to 2× slower than the measured machine.
 
-At 303 cases the 12 h limit corresponds to 142.6 s/case, so the projected
-**1.9–3.0 h leaves a 4–6× margin**. Enabling 8× mirroring multiplies only the
-GPU component and lands near 8.5 h, cutting the margin to about 1.4× on an
-unmeasured device; TTA is therefore **disabled by default**.
-
-Known optimisation, not applied: both models share the same plans, so the
-preprocessing and the export currently run twice per case. Preprocessing once
-and reusing the result for both networks would remove most of that overhead. It
-was left out deliberately — the current path is validated byte-for-byte against
-the reference pipeline (see below) and the run already fits the budget with a
-wide margin.
-
-To re-enable TTA (only if you have verified the timing on the target GPU):
+At 303 cases a 12 h budget corresponds to 142.6 s/case, so the projected
+1.9–3.0 h leaves a 4–6× margin. Enabling 8× mirroring multiplies only the GPU
+component and lands near 8.5 h, cutting the margin to about 1.4× on an unmeasured
+device. TTA is therefore **disabled by default**; re-enable it only after
+verifying timing on the target GPU:
 
 ```bash
 docker run ... -e BRATS_DISABLE_TTA=0 ...
 ```
 
-Other knobs, all overridable with `-e`:
+Both models share the same plans, so preprocessing and export currently run
+twice per case. Doing them once and reusing the result would remove most of that
+overhead. It was left out deliberately: the current path is validated against the
+reference pipeline (below) and the run already fits the budget with a wide margin.
+
+All knobs are overridable with `-e`:
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -303,34 +372,53 @@ Other knobs, all overridable with `-e`:
 | `BRATS_PP_SIZE_CUTOFF` | `50` | component size gate |
 | `BRATS_PP_T_NETC/SNFH/ET/RC` | `0.6/0.6/0.6/0.5` | per-class confidence thresholds |
 
-### Spatial correctness
+### 6.4 Spatial correctness
 
 All I/O goes through nnU-Net's `SimpleITKIO`, so spacing, origin and direction
 are carried over from the input image rather than reconstructed. Every written
-segmentation is then re-opened and compared against its input `t1c`; any
-mismatch in size, spacing, origin or direction aborts the run instead of
-producing a silently misaligned submission. The pipeline never writes to
-`/input` and asserts that `/output` stays flat.
+segmentation is re-opened and compared against its input `t1c`; any mismatch in
+size, spacing, origin or direction aborts the run instead of producing a silently
+misaligned submission. The pipeline never writes to `/input` and asserts that
+`/output` stays flat.
 
 This matters because an earlier version of the offline ensembling code fed
 already-resampled probability maps to `export_prediction_from_logits`, which
 expects *pre*-crop/*pre*-resample logits and re-applies the stored cropping
-itself. The result was catastrophically misaligned (IoU ≈ 0.075 against the
-same model's own native output) while still producing plausible-looking files.
-Routing everything through `SimpleITKIO` plus the post-write geometry assertion
-removes that entire class of failure.
+itself. The result was catastrophically misaligned (IoU ≈ 0.075 against the same
+model's own native output) while still producing plausible-looking files. Routing
+everything through `SimpleITKIO` plus the post-write geometry assertion removes
+that entire class of failure.
 
 **Validation.** Running this entrypoint on a case that had also been produced by
-the offline reference pipeline gives 3 differing voxels out of ~37 000
-foreground voxels (foreground Dice 0.999973); the residual is float summation
-order. With TTA disabled the agreement is Dice ≈ 0.996, the expected TTA
-difference.
+the offline reference pipeline gives 3 differing voxels out of ~37 000 foreground
+voxels (foreground Dice 0.999973); the residual is float summation order. With
+TTA disabled the agreement is Dice ≈ 0.996, the expected TTA difference.
 
 ---
 
-## 6. Citation
+## 7. Third-party components and licensing
 
-<!-- TODO: add BraTS-MET 2024 citation when released -->
+The Apache-2.0 licence covers **the code in this repository only**. The
+pretrained encoders are not redistributed here, and the released fold
+checkpoints carry their own terms.
+
+| Component | Licence | Source |
+|---|---|---|
+| nnU-Net v2 | Apache-2.0 | https://github.com/MIC-DKFZ/nnUNet |
+| Triad (PlainConvUNet-MAE) | CC BY 4.0 | https://github.com/wangshansong1/Triad |
+| BrainIAC (ViT-B/16) | Non-commercial academic research only | https://github.com/AIM-KannLab/BrainIAC |
+
+Triad is used under CC BY 4.0: the pretrained encoder initialised Model A and
+was then modified by fine-tuning on BraTS-METS data.
+
+Model B embeds the BrainIAC backbone (§3.2) and therefore inherits its
+non-commercial restriction. Commercial use of Model B, or of any weights derived
+from it, requires a separate licence from Mass General Brigham. The published
+weights are released under CC BY-NC 4.0 for this reason.
+
+---
+
+## 8. Citation
 
 If you use this code, please cite the challenge and the evaluation
 infrastructure:
@@ -358,12 +446,13 @@ infrastructure:
 }
 ```
 
-Supporting method references (nnU-Net, Triad, BrainIAC) are listed in the short
-paper.
+Please also cite the method components this work builds on: nnU-Net
+(Isensee et al., *Nature Methods* 2021), Triad (Wang et al., *Medical Image
+Analysis* 2026) and BrainIAC (Tak et al., *Nature Neuroscience* 2026).
 
 ---
 
-## 10. Acknowledgements
+## 9. Acknowledgements
 
 Data used in this publication were obtained as part of the Challenge project
 through Synapse ID (syn74274097).
