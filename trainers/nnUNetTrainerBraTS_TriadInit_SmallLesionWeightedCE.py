@@ -1,3 +1,13 @@
+# Copyright 2026 the authors of MICCAI-METS_challenge_bi-intel.
+# Licensed under the Apache License, Version 2.0 - see LICENSE at the repository root.
+#
+# Extends nnU-Net v2 (MIC-DKFZ, Apache-2.0): https://github.com/MIC-DKFZ/nnUNet
+#
+# Initialises the encoder from the Triad PlainConvUNet-MAE checkpoint
+# (https://github.com/wangshansong1/Triad). Triad is used under its upstream
+# licence and is modified here by fine-tuning. Verify that licence before
+# redistributing any derived weights.
+
 import os
 import sys
 from pathlib import Path

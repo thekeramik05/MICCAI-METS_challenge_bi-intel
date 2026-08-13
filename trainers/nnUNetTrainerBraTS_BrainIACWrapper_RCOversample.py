@@ -1,3 +1,17 @@
+# Copyright 2026 the authors of MICCAI-METS_challenge_bi-intel.
+# Licensed under the Apache License, Version 2.0 - see LICENSE at the repository root.
+#
+# Extends nnU-Net v2 (MIC-DKFZ, Apache-2.0): https://github.com/MIC-DKFZ/nnUNet
+#
+# Loads the BrainIAC ViT-B/16 checkpoint (https://github.com/AIM-KannLab/BrainIAC)
+# as a frozen auxiliary feature extractor. BrainIAC is licensed for non-commercial
+# academic research only; commercial use requires a separate licence from
+# Mass General Brigham.
+#
+# NOTE: checkpoints saved by this trainer embed the full BrainIAC backbone
+# (116.7 M parameters under the `brainiac.*` prefix, of 204.9 M total) and
+# therefore inherit that restriction. Redistributing them redistributes BrainIAC.
+
 """
 Usage example (PROJECT_ROOT is wherever this repository is checked out):
 

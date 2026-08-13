@@ -1,3 +1,8 @@
+# Copyright 2026 the authors of MICCAI-METS_challenge_bi-intel.
+# Licensed under the Apache License, Version 2.0 - see LICENSE at the repository root.
+#
+# Extends nnU-Net v2 (MIC-DKFZ, Apache-2.0): https://github.com/MIC-DKFZ/nnUNet
+
 import numpy as np
 import torch
 from acvl_utils.cropping_and_padding.bounding_boxes import crop_and_pad_nd
