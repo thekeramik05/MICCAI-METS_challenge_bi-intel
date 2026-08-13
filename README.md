@@ -391,7 +391,7 @@ Google Drive) and put that link in §7 below.
 
 Not included in this repository.
 
-**Download:** `[TODO: add public download link (HuggingFace / Google Drive)]`
+**Download:** [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model_Weights-blue)](https://huggingface.co/keramik05/MICCAI-METS_challenge_bi-intel_model)
 
 Expected layout after extraction (also produced by `scripts/prepare_weights.sh`):
 
